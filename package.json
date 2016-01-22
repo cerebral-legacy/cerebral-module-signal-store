@@ -1,0 +1,19 @@
+{
+  "name": "cerebral-module-signal-store",
+  "version": "0.0.3",
+  "description": "Time travel enabler for Cerebral application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cerebral/cerebral-module-signal-store.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cerebral/cerebral-module-signal-store/issues"
+  },
+  "homepage": "https://github.com/cerebral/cerebral-module-signal-store#readme"
+}
