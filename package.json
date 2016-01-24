@@ -35,7 +35,7 @@
     "analyzeCommits": "./sr-prerelease.js"
   },
   "devDependencies": {
-    "cerebral": "^0.33.1",
+    "cerebral": "^0.33.3",
     "commitizen": "^2.5.0",
     "conventional-changelog": "0.0.17",
     "coveralls": "^2.11.6",
@@ -48,6 +48,6 @@
     "validate-commit-msg": "^1.1.1"
   },
   "peerDependencies": {
-    "cerebral": "^0.33.1"
+    "cerebral": "^0.33.3"
   }
 }
