@@ -4,6 +4,8 @@
   is able to reset state and travel to a "specific point in time" by playing back the signals up to a certain
   signal.
 */
+var uuid = require('uuid')
+
 module.exports = function SignalStore () {
   return function (module, controller) {
     var signals = []
@@ -23,6 +25,7 @@ module.exports = function SignalStore () {
 
     var addSignal = function (signal) {
       if (!isRemembering) {
+        signal.signalStoreRef = uuid.v4()
         if (asyncActionsRunning.length) {
           var currentAction = asyncActionsRunning[asyncActionsRunning.length - 1]
           currentAction.signals = currentAction.signals || []

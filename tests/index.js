@@ -35,6 +35,31 @@ exports['should keep signals by default'] = function (test) {
   })
 }
 
+exports['should add signalStoreRef to signals'] = function (test) {
+  var ctrl = Controller(Model())
+  ctrl.addModules({ store: Store() })
+  var asyncSignal = [
+    [
+      function (context) { async(context.output) }
+    ]
+  ]
+  var signal = [
+    function () {}
+  ]
+
+  ctrl.addSignals({
+    'sync': signal,
+    'async': asyncSignal
+  })
+  ctrl.getSignals().async.sync()
+  ctrl.getSignals().sync.sync()
+  async(function () {
+    test.ok(ctrl.getServices().store.getSignals()[0].signalStoreRef)
+    test.ok(ctrl.getServices().store.getSignals()[0].branches[0][0].signals[0].signalStoreRef)
+    test.done()
+  })
+}
+
 exports['should store details about signal'] = function (test) {
   var ctrl = Controller(Model())
   ctrl.addModules({ store: Store() })
@@ -448,4 +473,3 @@ exports['should be able to run multiple async signals and store them correctly']
     })
   })
 }
-
