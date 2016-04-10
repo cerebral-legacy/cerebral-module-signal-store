@@ -25,14 +25,15 @@ exports['should keep signals by default'] = function (test) {
   ]
 
   ctrl.addSignals({
-    'test': signal
+    'test': {
+      chain: signal,
+      immediate: true
+    }
   })
   ctrl.getSignals().test()
   ctrl.getSignals().test()
-  async(function () {
-    test.equals(ctrl.getServices().store.getSignals().length, 2)
-    test.done()
-  })
+  test.equals(ctrl.getServices().store.getSignals().length, 2)
+  test.done()
 }
 
 exports['should add signalStoreRef to signals'] = function (test) {
@@ -50,9 +51,11 @@ exports['should add signalStoreRef to signals'] = function (test) {
   ctrl.addSignals({
     'sync': signal,
     'async': asyncSignal
+  }, {
+    immediate: true
   })
-  ctrl.getSignals().async.sync()
-  ctrl.getSignals().sync.sync()
+  ctrl.getSignals().async()
+  ctrl.getSignals().sync()
   async(function () {
     test.ok(ctrl.getServices().store.getSignals()[0].signalStoreRef)
     test.ok(ctrl.getServices().store.getSignals()[0].branches[0][0].signals[0].signalStoreRef)
@@ -386,7 +389,7 @@ exports['should be able to remember async actions and run them in the right orde
           arg.state.set(['foo'], false)
         }
       ],
-      isSync: true
+      immediate: true
     },
     signalB: {
       chain: [
@@ -397,7 +400,7 @@ exports['should be able to remember async actions and run them in the right orde
           arg.state.set(['foo'], true)
         }
       ],
-      isSync: true
+      immediate: true
     }
   })
 
@@ -454,7 +457,7 @@ exports['should be able to run multiple async signals and store them correctly']
           arg.state.set(['foo'], arg.input.foo)
         }
       ],
-      isSync: true
+      immediate: true
     }
   })
 
@@ -472,4 +475,23 @@ exports['should be able to run multiple async signals and store them correctly']
       test.done()
     })
   })
+}
+
+exports['should store isRouted and isRecorded options on the signal itself for the debugger'] = function (test) {
+  var ctrl = Controller(Model())
+  ctrl.addModules({ store: Store() })
+  var signal = [
+    function () {}
+  ]
+
+  ctrl.addSignals({
+    'test': {
+      chain: signal,
+      immediate: true
+    }
+  })
+  ctrl.getSignals().test({}, {isRecorded: true, isRouted: true})
+  test.ok(ctrl.getServices().store.getSignals()[0].isRecorded)
+  test.ok(ctrl.getServices().store.getSignals()[0].isRouted)
+  test.done()
 }
