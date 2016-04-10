@@ -12,6 +12,8 @@ module.exports = function SignalStore () {
     var isRemembering = false
     var currentIndex = signals.length - 1
     var hasRememberedInitial = false
+    var originalSignalReferences = []
+    var storeSignalReferences = []
 
     var asyncActionsRunning = []
 
@@ -27,23 +29,26 @@ module.exports = function SignalStore () {
       options = options || {}
 
       if (!isRemembering) {
-        signal.signalStoreRef = uuid.v4()
+        var signalCopy = Object.keys(signal).reduce(function (signalCopy, key) {
+          signalCopy[key] = signal[key]
+          return signalCopy
+        }, {})
+        signalCopy.signalStoreRef = uuid.v4()
+        signalCopy.isRouted = signalCopy.isRouted || options.isRouted
+        signalCopy.isRecorded = signalCopy.isRecorded || options.isRecorded
+
         if (asyncActionsRunning.length) {
           var currentAction = asyncActionsRunning[asyncActionsRunning.length - 1]
           currentAction.signals = currentAction.signals || []
-          currentAction.signals.push(signal)
+          currentAction.signals.push(signalCopy)
         } else {
           currentIndex++
-          var signalCopy = Object.keys(signal).reduce(function (signalCopy, key) {
-            signalCopy[key] = signal[key]
-            return signalCopy
-          }, {})
           // We still check if signal already has the property (older version)
           // should be removed later
-          signalCopy.isRouted = signalCopy.isRouted || options.isRouted
-          signalCopy.isRecorded = signalCopy.isRecorded || options.isRecorded
           signals.push(signalCopy)
         }
+        originalSignalReferences.push(signal)
+        storeSignalReferences.push(signalCopy)
       }
     }
 
@@ -177,6 +182,14 @@ module.exports = function SignalStore () {
     controller.on('actionEnd', function (args) {
       var action = args.action
       if (action.isAsync) removeAsyncAction(args.action)
+    })
+    controller.on('signalEnd', function (args) {
+      var signal = args.signal
+      var storeSignal = storeSignalReferences[originalSignalReferences.indexOf(signal)]
+      storeSignal.isExecuting = signal.isExecuting
+      storeSignal.duration = signal.duration
+      storeSignalReferences.splice(storeSignalReferences.indexOf(storeSignal), 1)
+      originalSignalReferences.splice(originalSignalReferences.indexOf(signal), 1)
     })
   }
 }
