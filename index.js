@@ -23,7 +23,9 @@ module.exports = function SignalStore () {
       asyncActionsRunning.splice(asyncActionsRunning.indexOf(action), 1)
     }
 
-    var addSignal = function (signal) {
+    var addSignal = function (signal, options) {
+      options = options || {}
+
       if (!isRemembering) {
         signal.signalStoreRef = uuid.v4()
         if (asyncActionsRunning.length) {
@@ -32,7 +34,15 @@ module.exports = function SignalStore () {
           currentAction.signals.push(signal)
         } else {
           currentIndex++
-          signals.push(signal)
+          var signalCopy = Object.keys(signal).reduce(function (signalCopy, key) {
+            signalCopy[key] = signal[key]
+            return signalCopy
+          }, {})
+          // We still check if signal already has the property (older version)
+          // should be removed later
+          signalCopy.isRouted = signalCopy.isRouted || options.isRouted
+          signalCopy.isRecorded = signalCopy.isRecorded || options.isRecorded
+          signals.push(signalCopy)
         }
       }
     }
@@ -156,8 +166,9 @@ module.exports = function SignalStore () {
     })
     controller.on('signalStart', function (args) {
       var signal = args.signal
+      var options = args.options
 
-      if (!signal.isPrevented) addSignal(signal)
+      if (!signal.isPrevented) addSignal(signal, options)
     })
     controller.on('actionStart', function (args) {
       var action = args.action
