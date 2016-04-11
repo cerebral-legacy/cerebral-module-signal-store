@@ -48,7 +48,7 @@
     "validate-commit-msg": "^1.1.1"
   },
   "peerDependencies": {
-    "cerebral": "^0.33.8"
+    "cerebral": "^0.33.8 || ^0.34.0-0"
   },
   "dependencies": {
     "uuid": "^2.0.1"
