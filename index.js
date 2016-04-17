@@ -12,10 +12,12 @@ module.exports = function SignalStore () {
     var isRemembering = false
     var currentIndex = signals.length - 1
     var hasRememberedInitial = false
-    var originalSignalReferences = []
-    var storeSignalReferences = []
-
     var asyncActionsRunning = []
+
+    if (controller.addContextProvider) {
+      controller.addContextProvider(require('cerebral/providers/signalPayloadProvider'))
+      controller.addContextProvider(require('cerebral/providers/actionMutationsProvider'))
+    }
 
     var addAsyncAction = function (action) {
       asyncActionsRunning.push(action)
@@ -29,26 +31,16 @@ module.exports = function SignalStore () {
       options = options || {}
 
       if (!isRemembering) {
-        var signalCopy = Object.keys(signal).reduce(function (signalCopy, key) {
-          signalCopy[key] = signal[key]
-          return signalCopy
-        }, {})
-        signalCopy.signalStoreRef = uuid.v4()
-        signalCopy.isRouted = signalCopy.isRouted || options.isRouted
-        signalCopy.isRecorded = signalCopy.isRecorded || options.isRecorded
+        signal.signalStoreRef = uuid.v4()
 
         if (asyncActionsRunning.length) {
           var currentAction = asyncActionsRunning[asyncActionsRunning.length - 1]
           currentAction.signals = currentAction.signals || []
-          currentAction.signals.push(signalCopy)
+          currentAction.signals.push(signal)
         } else {
           currentIndex++
-          // We still check if signal already has the property (older version)
-          // should be removed later
-          signals.push(signalCopy)
+          signals.push(signal)
         }
-        originalSignalReferences.push(signal)
-        storeSignalReferences.push(signalCopy)
       }
     }
 
@@ -109,13 +101,13 @@ module.exports = function SignalStore () {
               var signalMethodPath = signal.name.split('.').reduce(function (signals, key) {
                 return signals[key]
               }, controller.getSignals())
-              signalMethodPath(signal.input, {
+              signalMethodPath(signal.payload || signal.input, {
                 branches: signal.branches
               })
               currentIndex = x
             }
           } catch (e) {
-            console.log(e)
+            console.log(e.stack)
             console.warn('CEREBRAL - There was an error remembering state, it has been reset')
             this.reset()
           }
@@ -161,35 +153,24 @@ module.exports = function SignalStore () {
       return services
     }
 
-    controller.on('signalTrigger', function (args) {
-      var signal = args.signal
+    controller.on('signalTrigger', function (event) {
+      var signal = event.signal
 
       if (!isRemembering && currentIndex !== -1 && currentIndex < signals.length - 1) {
         signal.preventSignalRun()
         console.warn('Cerebral - Looking in the past, ignored signal ' + signal.name)
       }
     })
-    controller.on('signalStart', function (args) {
-      var signal = args.signal
-      var options = args.options
-
-      if (!signal.isPrevented) addSignal(signal, options)
+    controller.on('signalStart', function (event) {
+      if (!event.signal.isPrevented) addSignal(event.signal)
     })
-    controller.on('actionStart', function (args) {
-      var action = args.action
-      if (action.isAsync) addAsyncAction(args.action)
+    controller.on('actionStart', function (event) {
+      var action = event.action
+      if (action.isAsync) addAsyncAction(action)
     })
-    controller.on('actionEnd', function (args) {
-      var action = args.action
-      if (action.isAsync) removeAsyncAction(args.action)
-    })
-    controller.on('signalEnd', function (args) {
-      var signal = args.signal
-      var storeSignal = storeSignalReferences[originalSignalReferences.indexOf(signal)]
-      storeSignal.isExecuting = signal.isExecuting
-      storeSignal.duration = signal.duration
-      storeSignalReferences.splice(storeSignalReferences.indexOf(storeSignal), 1)
-      originalSignalReferences.splice(originalSignalReferences.indexOf(signal), 1)
+    controller.on('actionEnd', function (event) {
+      var action = event.action
+      if (action.isAsync) removeAsyncAction(action)
     })
   }
 }

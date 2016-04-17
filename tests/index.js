@@ -1,15 +1,20 @@
 var Controller = require('cerebral')
 var Store = require('../index')
-
+var suite = {}
 var async = function (cb) {
   setTimeout(cb, 0)
 }
-var Model = function () {
+var Model = function (state) {
+  state = state || {}
   return function () {
     return {
+      accessors: {
+        get: function (path) {
+          return state[path[0]]
+        }
+      },
       mutators: {
         set: function (path, value) {
-          var state = {}
           state[path.pop()] = value
         }
       }
@@ -17,7 +22,7 @@ var Model = function () {
   }
 }
 
-exports['should keep signals by default'] = function (test) {
+suite['should keep signals by default'] = function (test) {
   var ctrl = Controller(Model())
   ctrl.addModules({ store: Store() })
   var signal = [
@@ -36,7 +41,7 @@ exports['should keep signals by default'] = function (test) {
   test.done()
 }
 
-exports['should add signalStoreRef to signals'] = function (test) {
+suite['should add signalStoreRef to signals'] = function (test) {
   var ctrl = Controller(Model())
   ctrl.addModules({ store: Store() })
   var asyncSignal = [
@@ -63,143 +68,7 @@ exports['should add signalStoreRef to signals'] = function (test) {
   })
 }
 
-exports['should store details about signal'] = function (test) {
-  var ctrl = Controller(Model())
-  ctrl.addModules({ store: Store() })
-  var signal = [
-    function ActionA () {}
-  ]
-
-  ctrl.addSignals({
-    'test': signal
-  })
-  ctrl.getSignals().test({
-    foo: true
-  })
-  async(function () {
-    var signal = ctrl.getServices().store.getSignals()[0]
-    test.equal(signal.name, 'test')
-    test.deepEqual(signal.input, {foo: true})
-    test.equal(signal.branches.length, 1)
-    test.done()
-  })
-}
-
-exports['should not store default args'] = function (test) {
-  var ctrl = Controller(Model())
-  ctrl.addModules({ store: Store() })
-  var signal = [
-    function ActionA () {}
-  ]
-
-  ctrl.addServices({
-    utils: 'test'
-  })
-  ctrl.addSignals({
-    'test': signal
-  })
-  ctrl.getSignals().test({
-    foo: true
-  })
-  async(function () {
-    var signal = ctrl.getServices().store.getSignals()[0]
-    test.equal(signal.name, 'test')
-    test.deepEqual(signal.input, {foo: true})
-    test.equal(signal.branches.length, 1)
-    test.done()
-  })
-}
-
-exports['should store details about actions'] = function (test) {
-  var ctrl = Controller(Model())
-  ctrl.addModules({ store: Store() })
-  var signal = [
-    function ActionA () {}
-  ]
-
-  ctrl.addSignals({
-    'test': signal
-  })
-  ctrl.getSignals().test({
-    foo: true
-  })
-  async(function () {
-    var action = ctrl.getServices().store.getSignals()[0].branches[0]
-    test.equal(action.name, 'ActionA')
-    test.equal(action.mutations.length, 0)
-    test.done()
-  })
-}
-
-exports['should store details about mutations'] = function (test) {
-  var ctrl = Controller(Model())
-  ctrl.addModules({ store: Store() })
-  var signal = [
-    function ActionA (args) {
-      args.state.set('foo', 'bar')
-    }
-  ]
-
-  ctrl.addSignals({
-    'test': signal
-  })
-  ctrl.getSignals().test()
-
-  async(function () {
-    var action = ctrl.getServices().store.getSignals()[0].branches[0]
-    test.deepEqual(action.mutations[0], {
-      name: 'set',
-      path: ['foo'],
-      args: ['bar']
-    })
-    test.done()
-  })
-}
-
-exports['should store details about mutations correctly across sync and async signals'] = function (test) {
-  var ctrl = Controller(Model())
-  ctrl.addModules({ store: Store() })
-  var signalSync = [
-    function ActionA (args) {
-      args.state.set('foo', 'bar')
-    }
-  ]
-
-  ctrl.addSignals({
-    'test': signalSync
-  })
-  var signalAsync = [
-    [
-      function ActionB (args) { args.output() }
-    ], function ActionC (args) {
-      args.state.set('foo', 'bar')
-
-      async(function () {
-        var actionAsync = ctrl.getServices().store.getSignals()[0].branches[1]
-        test.deepEqual(actionAsync.mutations[0], {
-          name: 'set',
-          path: ['foo'],
-          args: ['bar']
-        })
-
-        var action = ctrl.getServices().store.getSignals()[0].branches[0][0].signals[0].branches[0]
-        test.deepEqual(action.mutations[0], {
-          name: 'set',
-          path: ['foo'],
-          args: ['bar']
-        })
-        test.done()
-      })
-    }
-  ]
-  ctrl.addSignals({
-    'testAsync': signalAsync
-  })
-  ctrl.getSignals().testAsync()
-  ctrl.getSignals().test()
-}
-
-exports['should indicate async actions'] = function (test) {
+suite['should indicate async actions'] = function (test) {
   var ctrl = Controller(Model())
   ctrl.addModules({ store: Store() })
   var signal = [
@@ -219,7 +88,7 @@ exports['should indicate async actions'] = function (test) {
   ctrl.getSignals().test()
 }
 
-exports['should indicate when async actions are running'] = function (test) {
+suite['should indicate when async actions are running'] = function (test) {
   test.expect(5)
   var ctrl = Controller(Model())
   ctrl.addModules({ store: Store() })
@@ -251,7 +120,7 @@ exports['should indicate when async actions are running'] = function (test) {
   ctrl.getSignals().test()
 }
 
-exports['should be able to remember previous signal'] = function (test) {
+suite['should be able to remember previous signal'] = function (test) {
   var initialState = {}
   var state = initialState
   var Model = function () {
@@ -297,7 +166,7 @@ exports['should be able to remember previous signal'] = function (test) {
   })
 }
 
-exports['should be able to remember async actions and run them synchronously when remembering'] = function (test) {
+suite['should be able to remember async actions and run them synchronously when remembering'] = function (test) {
   var signalCount = 0
   var initialState = {}
   var state = initialState
@@ -352,7 +221,7 @@ exports['should be able to remember async actions and run them synchronously whe
   })
 }
 
-exports['should be able to remember async actions and run them in the right order'] = function (test) {
+suite['should be able to remember async actions and run them in the right order'] = function (test) {
   var setsCount = 0
   var initialState = {
     foo: true
@@ -417,7 +286,7 @@ exports['should be able to remember async actions and run them in the right orde
   })
 }
 
-exports['should be able to run multiple async signals and store them correctly'] = function (test) {
+suite['should be able to run multiple async signals and store them correctly'] = function (test) {
   var setsCount = 0
   var initialState = {
     foo: true
@@ -477,21 +346,4 @@ exports['should be able to run multiple async signals and store them correctly']
   })
 }
 
-exports['should store isRouted and isRecorded options on the signal itself for the debugger'] = function (test) {
-  var ctrl = Controller(Model())
-  ctrl.addModules({ store: Store() })
-  var signal = [
-    function () {}
-  ]
-
-  ctrl.addSignals({
-    'test': {
-      chain: signal,
-      immediate: true
-    }
-  })
-  ctrl.getSignals().test({}, {isRecorded: true, isRouted: true})
-  test.ok(ctrl.getServices().store.getSignals()[0].isRecorded)
-  test.ok(ctrl.getServices().store.getSignals()[0].isRouted)
-  test.done()
-}
+module.exports = suite
