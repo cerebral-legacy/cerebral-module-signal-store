@@ -1,5 +1,5 @@
 # cerebral-module-signal-store
-Time travel enabler for Cerebral application 
+Time travel enabler for Cerebral 1.x application 
 
 [![NPM version][npm-image]][npm-url]
 [![Build status][travis-image]][travis-url]
@@ -10,7 +10,7 @@ Time travel enabler for Cerebral application
 [![js-standard-style][standard-image]][standard-url]
 [![Discord][discord-image]][discord-url]
 
-Currently it used as submodule of [cerebral-module-devtools](https://github.com/cerebral/cerebral-module-devtools) and there is no need to include it as top level module.
+Currently it used as submodule of [cerebral-module-devtools](https://github.com/cerebral-legacy/cerebral-module-devtools) and there is no need to include it as top level module.
 Still feel free to inspect it and create own cool stuff based on it.
 
 [npm-image]: https://img.shields.io/npm/v/cerebral-module-signal-store.svg?style=flat
